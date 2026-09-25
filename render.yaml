@@ -13,8 +13,9 @@ services:
         value: 3.11.9
 
   # 2. React + Vite Frontend
-  - type: static
+  - type: web
     name: cardio-risk-frontend
+    runtime: static
     rootDir: cardio-frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
