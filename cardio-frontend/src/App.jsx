@@ -1,404 +1,180 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useState, forwardRef } from "react";
-import { Heart, Activity, Shield, TrendingDown, ChevronRight, Sparkles, Check, AlertCircle, Star, Users, Zap, ArrowRight, BarChart3, ChevronDown } from "lucide-react";
-import { toast } from "sonner";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Heart,
+  Activity,
+  ShieldCheck,
+  AlertTriangle,
+  Sparkles,
+  RotateCcw,
+  CheckCircle2,
+  TrendingUp,
+  Stethoscope,
+  ChevronRight,
+  Info,
+  SlidersHorizontal,
+} from "lucide-react";
+import { toast, Toaster } from "sonner";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import * as LabelPrimitive from "@radix-ui/react-label";
-import * as SelectPrimitive from "@radix-ui/react-select";
-import { cva } from "class-variance-authority";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import './index.css' 
 
-const getApiUrl = () => {
-  let envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
-  if (envUrl) {
-    if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
-      return envUrl;
-    }
-    if (envUrl.includes('.')) {
-      return `https://${envUrl}`;
-    }
-    if (!envUrl.includes(':')) {
-      return `https://${envUrl}.onrender.com`;
-    }
-    return `http://${envUrl}`;
-  }
-  if (typeof window !== 'undefined') {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:8000';
-    }
-    return window.location.origin;
-  }
-  return 'http://localhost:8000';
-};
-
-const API_URL = getApiUrl();
-
-// Utility function
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// ========== Button Component ==========
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+// API URL resolver supporting local, containerized, and Render environments
+const getApiUrl = () => {
+  let envUrl = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
+  if (envUrl) {
+    if (envUrl.startsWith("http://") || envUrl.startsWith("https://")) {
+      return envUrl;
+    }
+    if (envUrl.includes(".")) {
+      return `https://${envUrl}`;
+    }
+    if (!envUrl.includes(":")) {
+      return `https://${envUrl}.onrender.com`;
+    }
+    return `http://${envUrl}`;
   }
-);
+  if (typeof window !== "undefined") {
+    if (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    ) {
+      return "http://localhost:8000";
+    }
+    return window.location.origin;
+  }
+  return "http://localhost:8000";
+};
 
-const Button = forwardRef(({ className, variant, size, ...props }, ref) => {
-  return (
-    <button
-      className={cn(buttonVariants({ variant, size, className }))}
-      ref={ref}
-      {...props}
-    />
-  );
-});
-Button.displayName = "Button";
+const API_URL = getApiUrl();
 
-// ========== Slider Component ==========
-const Slider = forwardRef(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn("relative flex w-full touch-none select-none items-center", className)}
-    {...props}
-  >
-    <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-primary/20">
-      <SliderPrimitive.Range className="absolute h-full bg-primary" />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
-  </SliderPrimitive.Root>
-));
-Slider.displayName = SliderPrimitive.Root.displayName;
+const PRESETS = {
+  healthy: {
+    name: "Low Risk Profile",
+    data: {
+      age: 32,
+      gender: 1,
+      height: 168,
+      weight: 62,
+      ap_hi: 115,
+      ap_lo: 75,
+      cholesterol: 1,
+      gluc: 1,
+      smoke: 0,
+      alco: 0,
+      active: 1,
+    },
+  },
+  moderate: {
+    name: "Average Adult",
+    data: {
+      age: 50,
+      gender: 2,
+      height: 175,
+      weight: 78,
+      ap_hi: 125,
+      ap_lo: 82,
+      cholesterol: 1,
+      gluc: 1,
+      smoke: 0,
+      alco: 0,
+      active: 1,
+    },
+  },
+  elevated: {
+    name: "Elevated Risk",
+    data: {
+      age: 58,
+      gender: 2,
+      height: 172,
+      weight: 88,
+      ap_hi: 145,
+      ap_lo: 92,
+      cholesterol: 2,
+      gluc: 2,
+      smoke: 1,
+      alco: 1,
+      active: 0,
+    },
+  },
+};
 
-// ========== Switch Component ==========
-// ========== Switch Component ==========
-const Switch = forwardRef(({ className, ...props }, ref) => (
-  <SwitchPrimitive.Root
-    className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
-      // FIXED COLORS HERE:
-      "data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-700", 
-      className
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitive.Thumb
-      className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
-      )}
-    />
-  </SwitchPrimitive.Root>
-));
-Switch.displayName = SwitchPrimitive.Root.displayName;
-// ========== Label Component ==========
-const Label = forwardRef(({ className, ...props }, ref) => (
-  <LabelPrimitive.Root
-    ref={ref}
-    className={cn(
-      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-      className
-    )}
-    {...props}
-  />
-));
-Label.displayName = LabelPrimitive.Root.displayName;
-
-// ========== Select Components ==========
-const Select = SelectPrimitive.Root;
-const SelectValue = SelectPrimitive.Value;
-
-const SelectTrigger = forwardRef(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-      className
-    )}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
-SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
-
-const SelectContent = forwardRef(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        position === "popper" &&
-          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-        className
-      )}
-      position={position}
-      {...props}
-    >
-      <SelectPrimitive.Viewport
-        className={cn(
-          "p-1",
-          position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
-        )}
-      >
-        {children}
-      </SelectPrimitive.Viewport>
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
-SelectContent.displayName = SelectPrimitive.Content.displayName;
-
-const SelectItem = forwardRef(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-));
-SelectItem.displayName = SelectPrimitive.Item.displayName;
-
-// ========== AnimatedHeart Component ==========
-function AnimatedHeart() {
-  return (
-    <div className="w-full h-full flex items-center justify-center relative">
-      {/* Pulsing rings */}
-      <motion.div
-        className="absolute w-64 h-64 rounded-full border-2 border-primary/30"
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [0.5, 0.2, 0.5],
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute w-64 h-64 rounded-full border-2 border-accent/30"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.6, 0.3, 0.6],
-        }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-      />
-      <motion.div
-        className="absolute w-64 h-64 rounded-full border-2 border-secondary/30"
-        animate={{
-          scale: [1, 1.4, 1],
-          opacity: [0.4, 0.2, 0.4],
-        }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-      />
-
-      {/* Center heart with gradient and glow */}
-      <motion.div
-        className="relative z-10"
-        animate={{
-          scale: [1, 1.1, 1],
-          rotate: [0, 5, -5, 0],
-        }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <motion.svg
-          width="200"
-          height="200"
-          viewBox="0 0 24 24"
-          fill="none"
-          className="drop-shadow-2xl"
-          animate={{
-            filter: [
-              "drop-shadow(0 0 20px rgba(88, 101, 242, 0.5))",
-              "drop-shadow(0 0 40px rgba(255, 107, 157, 0.7))",
-              "drop-shadow(0 0 20px rgba(88, 101, 242, 0.5))",
-            ],
-          }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <defs>
-            <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <motion.stop
-                offset="0%"
-                stopColor="#5865f2"
-                animate={{
-                  stopColor: ["#5865f2", "#ff6b9d", "#a855f7", "#5865f2"],
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-              />
-              <motion.stop
-                offset="50%"
-                stopColor="#ff6b9d"
-                animate={{
-                  stopColor: ["#ff6b9d", "#a855f7", "#5865f2", "#ff6b9d"],
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-              />
-              <motion.stop
-                offset="100%"
-                stopColor="#a855f7"
-                animate={{
-                  stopColor: ["#a855f7", "#5865f2", "#ff6b9d", "#a855f7"],
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-              />
-            </linearGradient>
-          </defs>
-          <path
-            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-            fill="url(#heartGradient)"
-            stroke="url(#heartGradient)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </motion.svg>
-      </motion.div>
-
-      {/* Floating particles */}
-      {[...Array(12)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-primary to-accent"
-          style={{
-            left: `${50 + Math.cos((i * Math.PI * 2) / 12) * 40}%`,
-            top: `${50 + Math.sin((i * Math.PI * 2) / 12) * 40}%`,
-          }}
-          animate={{
-            scale: [0, 1, 0],
-            opacity: [0, 0.8, 0],
-            x: [0, Math.cos((i * Math.PI * 2) / 12) * 30],
-            y: [0, Math.sin((i * Math.PI * 2) / 12) * 30],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeOut",
-            delay: i * 0.2,
-          }}
-        />
-      ))}
-
-      {/* ECG-style line animation */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 w-48 h-16 overflow-hidden">
-        <svg width="192" height="64" viewBox="0 0 192 64" className="w-full h-full">
-          <motion.path
-            d="M 0 32 L 40 32 L 50 10 L 60 50 L 70 32 L 192 32"
-            stroke="url(#heartGradient)"
-            strokeWidth="2"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: [0, 1, 1, 0] }}
-            transition={{
-              pathLength: { duration: 2, repeat: Infinity, ease: "linear" },
-              opacity: { duration: 2, repeat: Infinity, ease: "linear" },
-            }}
-          />
-        </svg>
-      </div>
-
-      {/* Stats overlay */}
-      <motion.div
-        className="absolute top-10 right-10 glass-card px-4 py-2 rounded-xl"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1 }}
-      >
-        <div className="text-xs text-muted-foreground">Heart Rate</div>
-        <motion.div
-          className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-          animate={{ opacity: [1, 0.6, 1] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
-          72 BPM
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
-
-// ========== Main Landing Component ==========
-export default function Landing() {
-  const [showAssessment, setShowAssessment] = useState(false);
+export default function App() {
+  const [form, setForm] = useState(PRESETS.moderate.data);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const { scrollY } = useScroll();
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-
-  const [form, setForm] = useState({
-    age: 30,
-    gender: 1,
-    height: 170,
-    weight: 70,
-    ap_hi: 120,
-    ap_lo: 80,
-    cholesterol: 1,
-    gluc: 1,
-    smoke: 0,
-    alco: 0,
-    active: 1,
-  });
 
   const updateForm = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const calculateBMI = () => {
-    const heightInMeters = form.height / 100;
-    return (form.weight / (heightInMeters * heightInMeters)).toFixed(1);
-  };
+  const bmi = useMemo(() => {
+    const h = form.height / 100;
+    const val = form.weight / (h * h);
+    let category = "Normal";
+    let color = "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
+    if (val < 18.5) {
+      category = "Underweight";
+      color = "text-amber-400 border-amber-500/30 bg-amber-500/10";
+    } else if (val >= 25 && val < 30) {
+      category = "Overweight";
+      color = "text-amber-400 border-amber-500/30 bg-amber-500/10";
+    } else if (val >= 30) {
+      category = "Obese";
+      color = "text-rose-400 border-rose-500/30 bg-rose-500/10";
+    }
+    return { val: val.toFixed(1), category, color };
+  }, [form.height, form.weight]);
 
-  const getBloodPressureCategory = () => {
-    const { ap_hi: systolic, ap_lo: diastolic } = form;
+  const bpStatus = useMemo(() => {
+    const { ap_hi, ap_lo } = form;
+    if (ap_hi < 120 && ap_lo < 80)
+      return {
+        label: "Normal",
+        color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
+      };
+    if (ap_hi < 130 && ap_lo < 80)
+      return {
+        label: "Elevated",
+        color: "text-amber-400 border-amber-500/30 bg-amber-500/10",
+      };
+    if (ap_hi < 140 || ap_lo < 90)
+      return {
+        label: "Stage 1 High",
+        color: "text-orange-400 border-orange-500/30 bg-orange-500/10",
+      };
+    if (ap_hi >= 140 || ap_lo >= 90)
+      return {
+        label: "Stage 2 High",
+        color: "text-rose-400 border-rose-500/30 bg-rose-500/10",
+      };
+    return {
+      label: "Critical",
+      color: "text-rose-500 border-rose-600/30 bg-rose-600/10",
+    };
+  }, [form.ap_hi, form.ap_lo]);
 
-    if (systolic < 120 && diastolic < 80) return "Normal";
-    if (systolic < 130 && diastolic < 80) return "Elevated";
-    if (systolic < 140 || diastolic < 90) return "Stage 1 High";
-    if (systolic >= 140 || diastolic >= 90) return "Stage 2 High";
-    if (systolic >= 180 || diastolic >= 120) return "Crisis";
+  const activeRiskFactors = useMemo(() => {
+    const factors = [];
+    if (form.ap_hi >= 130 || form.ap_lo >= 85)
+      factors.push("Elevated Blood Pressure");
+    if (form.cholesterol > 1) factors.push("Elevated Cholesterol");
+    if (form.gluc > 1) factors.push("Elevated Blood Glucose");
+    if (form.smoke === 1) factors.push("Tobacco Smoker");
+    if (form.active === 0) factors.push("Physical Inactivity");
+    if (parseFloat(bmi.val) >= 28) factors.push("High BMI / Overweight");
+    if (form.age >= 55) factors.push("Age Factor (55+)");
+    return factors;
+  }, [form, bmi]);
 
-    return "Check Required";
-  };
-
-  const submit = async () => {
+  const handlePredict = async () => {
     setLoading(true);
-    setResult(null);
-
     try {
       const res = await fetch(`${API_URL}/predict`, {
         method: "POST",
@@ -406,873 +182,614 @@ export default function Landing() {
         body: JSON.stringify(form),
       });
 
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
 
       const data = await res.json();
       setResult(data);
-      toast.success("Assessment completed successfully");
+      toast.success("Cardiovascular risk analyzed successfully");
     } catch (err) {
-      toast.error("Failed to get prediction. Please check your connection.");
-      console.error("API Error:", err);
+      toast.error(
+        "Could not connect to the API. Please ensure the backend is running."
+      );
+      console.error("Prediction Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setForm({
-      age: 30,
-      gender: 1,
-      height: 170,
-      weight: 70,
-      ap_hi: 120,
-      ap_lo: 80,
-      cholesterol: 1,
-      gluc: 1,
-      smoke: 0,
-      alco: 0,
-      active: 1,
-    });
+  const applyPreset = (key) => {
+    setForm(PRESETS[key].data);
     setResult(null);
+    toast.info(`Loaded ${PRESETS[key].name} preset`);
+  };
+
+  const resetForm = () => {
+    setForm(PRESETS.moderate.data);
+    setResult(null);
+    toast("Form reset to default parameters");
   };
 
   return (
-    <div className="min-h-screen gradient-bg relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute top-20 left-10 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.6, 0.3],
-            x: [0, 50, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px]"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.3, 0.5, 0.3],
-            x: [0, -30, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[90px]"
-          animate={{
-            scale: [1, 1.4, 1],
-            opacity: [0.2, 0.4, 0.2],
-            rotate: [0, 180, 360],
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+      <Toaster position="top-right" richColors />
 
-      {!showAssessment ? (
-        <HeroSection onStart={() => setShowAssessment(true)} opacity={opacity} />
-      ) : (
-        <AssessmentSection
-          form={form}
-          updateForm={updateForm}
-          calculateBMI={calculateBMI}
-          getBloodPressureCategory={getBloodPressureCategory}
-          submit={submit}
-          resetForm={resetForm}
-          loading={loading}
-          result={result}
-          onBack={() => setShowAssessment(false)}
-        />
-      )}
-    </div>
-  );
-}
-
-// ========== Hero Section ==========
-function HeroSection({ onStart, opacity }) {
-  return (
-    <div className="min-h-screen flex flex-col relative z-10">
-      {/* Navigation */}
-      <motion.nav
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="p-4 md:p-8"
-      >
-        <div className="max-w-7xl mx-auto glass-premium rounded-3xl px-6 py-5 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <motion.div
-              className="flex items-center gap-3"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center shadow-lg glow-pulse">
-                <Heart className="w-7 h-7 text-white" fill="white" />
-              </div>
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent text-gradient-animate">
-                CardioPredict AI
+      {/* Clean Minimal Header */}
+      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <Heart className="w-5 h-5 fill-blue-500/20" />
+            </div>
+            <div>
+              <span className="font-semibold text-base tracking-tight text-white flex items-center gap-2">
+                CardioRisk <span className="text-blue-400 text-xs font-mono px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">AI</span>
               </span>
-            </motion.div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-semibold hover:text-primary transition-all hover:scale-105">
-                Features
-              </a>
-              <a href="#stats" className="text-sm font-semibold hover:text-accent transition-all hover:scale-105">
-                Statistics
-              </a>
-              <a href="#about" className="text-sm font-semibold hover:text-secondary transition-all hover:scale-105">
-                About
-              </a>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-primary to-accent hover:scale-105 transition-all shadow-lg"
-              >
-                Get Started
-              </Button>
+              <p className="text-[11px] text-slate-400 font-mono">
+                XGBoost Clinical Pipeline
+              </p>
             </div>
           </div>
-        </div>
-      </motion.nav>
 
-      {/* Hero Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Column - Text Content */}
-          <div className="text-center lg:text-left space-y-8">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              API Connected
+            </div>
+            <button
+              onClick={resetForm}
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent hover:border-slate-700/60 transition-colors text-xs flex items-center gap-1.5"
+              title="Reset parameters"
             >
-              <div className="inline-flex items-center gap-2 glass-card px-5 py-2.5 rounded-full mb-6 hover-scale">
-                <Sparkles className="w-5 h-5 text-accent" />
-                <span className="text-sm font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                  AI-Powered Medical Intelligence
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Workspace */}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
+        {/* Preset Selector Bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl minimal-card">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <SlidersHorizontal className="w-4 h-4 text-blue-400" />
+            <span>Quick Presets:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.entries(PRESETS).map(([key, preset]) => (
+              <button
+                key={key}
+                onClick={() => applyPreset(key)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-slate-700/60 bg-slate-800/40 hover:bg-slate-800 hover:border-blue-500/40 text-slate-300 hover:text-white transition-all"
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column: Clinical & Lifestyle Inputs (7 cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            {/* 1. Demographics Card */}
+            <div className="minimal-card rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-blue-400 text-xs font-mono">
+                    1
+                  </span>
+                  Demographics
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Age Slider */}
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Age</span>
+                    <span className="font-mono text-sm font-semibold text-blue-400">
+                      {form.age} <span className="text-[11px] text-slate-500 font-normal">years</span>
+                    </span>
+                  </div>
+                  <MinimalSlider
+                    min={18}
+                    max={95}
+                    value={form.age}
+                    onChange={(v) => updateForm("age", v)}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>18</span>
+                    <span>95</span>
+                  </div>
+                </div>
+
+                {/* Gender Toggle */}
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <span className="text-xs text-slate-400">Biological Sex</span>
+                  <div className="grid grid-cols-2 gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => updateForm("gender", 1)}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-xs font-medium border transition-all",
+                        form.gender === 1
+                          ? "bg-blue-600/20 border-blue-500/50 text-blue-300 font-semibold"
+                          : "bg-slate-800/30 border-slate-800 text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      Female
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateForm("gender", 2)}
+                      className={cn(
+                        "py-2 px-3 rounded-lg text-xs font-medium border transition-all",
+                        form.gender === 2
+                          ? "bg-blue-600/20 border-blue-500/50 text-blue-300 font-semibold"
+                          : "bg-slate-800/30 border-slate-800 text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      Male
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Biometrics & Vitals Card */}
+            <div className="minimal-card rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-blue-400 text-xs font-mono">
+                    2
+                  </span>
+                  Biometrics & Blood Pressure
+                </h2>
+                <span className={cn("text-[11px] px-2 py-0.5 rounded-full border font-mono", bmi.color)}>
+                  BMI: {bmi.val} ({bmi.category})
                 </span>
               </div>
-            </motion.div>
 
-            <motion.h1
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-[1.1] tracking-tight"
-            >
-              Predict Your
-              <br />
-              <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent text-gradient-animate inline-block">
-                Heart Health
-              </span>
-            </motion.h1>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Height */}
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Height</span>
+                    <span className="font-mono text-sm font-semibold text-blue-400">
+                      {form.height} <span className="text-[11px] text-slate-500 font-normal">cm</span>
+                    </span>
+                  </div>
+                  <MinimalSlider
+                    min={120}
+                    max={220}
+                    value={form.height}
+                    onChange={(v) => updateForm("height", v)}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>120 cm</span>
+                    <span>220 cm</span>
+                  </div>
+                </div>
 
-            <motion.p
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed"
-            >
-              Leverage cutting-edge AI technology to analyze your vital health metrics and receive
-              instant, accurate cardiovascular risk predictions. Your path to better heart health
-              starts now.
-            </motion.p>
+                {/* Weight */}
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Weight</span>
+                    <span className="font-mono text-sm font-semibold text-blue-400">
+                      {form.weight} <span className="text-[11px] text-slate-500 font-normal">kg</span>
+                    </span>
+                  </div>
+                  <MinimalSlider
+                    min={40}
+                    max={160}
+                    value={form.weight}
+                    onChange={(v) => updateForm("weight", v)}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>40 kg</span>
+                    <span>160 kg</span>
+                  </div>
+                </div>
 
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
-            >
-              <Button
-                size="lg"
-                onClick={onStart}
-                className="glass-premium text-lg px-10 py-7 rounded-2xl hover:scale-105 transition-all duration-300 group shadow-2xl text-white bg-gradient-to-r from-primary to-accent border-0"
-              >
-                <Zap className="mr-2 w-6 h-6" />
-                Start Free Assessment
-                <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-2 transition-transform" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="glass-strong text-lg px-10 py-7 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg border-2"
-              >
-                <BarChart3 className="mr-2 w-5 h-5" />
-                View Demo
-              </Button>
-            </motion.div>
+                {/* Systolic BP */}
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Systolic (Upper)</span>
+                    <span className="font-mono text-sm font-semibold text-blue-400">
+                      {form.ap_hi} <span className="text-[11px] text-slate-500 font-normal">mmHg</span>
+                    </span>
+                  </div>
+                  <MinimalSlider
+                    min={80}
+                    max={220}
+                    value={form.ap_hi}
+                    onChange={(v) => updateForm("ap_hi", v)}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>80</span>
+                    <span>220</span>
+                  </div>
+                </div>
 
-            {/* Trust Indicators */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="grid grid-cols-3 gap-6 max-w-xl mx-auto lg:mx-0 pt-8"
-            >
-              <TrustStat icon={<Users />} value="50K+" label="Users Trust Us" />
-              <TrustStat icon={<Star />} value="98%" label="Accuracy Rate" />
-              <TrustStat icon={<Shield />} value="100%" label="Data Security" />
-            </motion.div>
-          </div>
+                {/* Diastolic BP */}
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Diastolic (Lower)</span>
+                    <span className="font-mono text-sm font-semibold text-blue-400">
+                      {form.ap_lo} <span className="text-[11px] text-slate-500 font-normal">mmHg</span>
+                    </span>
+                  </div>
+                  <MinimalSlider
+                    min={50}
+                    max={140}
+                    value={form.ap_lo}
+                    onChange={(v) => updateForm("ap_lo", v)}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>50</span>
+                    <span>140</span>
+                  </div>
+                </div>
+              </div>
 
-          {/* Right Column - 3D Visual */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0, x: 100 }}
-            animate={{ scale: 1, opacity: 1, x: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            className="hidden lg:block relative h-[600px]"
-          >
-            <div className="absolute inset-0 glass-card rounded-3xl overflow-hidden shadow-2xl">
-              <AnimatedHeart />
-            </div>
-            {/* Floating Stats Cards */}
-            <FloatingCard
-              className="absolute top-10 -left-10"
-              delay={0.8}
-              icon={<Activity className="w-5 h-5 text-primary" />}
-              label="Real-time Analysis"
-              value="Instant"
-            />
-            <FloatingCard
-              className="absolute bottom-20 -right-10"
-              delay={1}
-              icon={<TrendingDown className="w-5 h-5 text-accent" />}
-              label="Risk Assessment"
-              value="AI-Powered"
-            />
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Feature Cards */}
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.7 }}
-        className="px-4 pb-20 relative z-10"
-        style={{ opacity }}
-      >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FeatureCard
-            icon={<Activity className="w-10 h-10" />}
-            title="Real-time Analysis"
-            description="Lightning-fast AI predictions with comprehensive health insights in milliseconds"
-            gradient="from-primary/20 to-accent/20"
-            delay={0.8}
-          />
-          <FeatureCard
-            icon={<Shield className="w-10 h-10" />}
-            title="Privacy First"
-            description="Bank-level encryption ensures your sensitive health data remains completely secure"
-            gradient="from-accent/20 to-secondary/20"
-            delay={0.9}
-          />
-          <FeatureCard
-            icon={<TrendingDown className="w-10 h-10" />}
-            title="Actionable Insights"
-            description="Receive personalized, evidence-based recommendations for optimal heart health"
-            gradient="from-secondary/20 to-primary/20"
-            delay={1}
-          />
-        </div>
-      </motion.div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.2 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        style={{ opacity }}
-      >
-        <motion.div
-          animate={{ y: [0, 12, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-7 h-12 border-2 border-primary/60 rounded-full p-1.5 glass"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="w-1.5 h-3 bg-gradient-to-b from-primary to-accent rounded-full mx-auto"
-          />
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
-
-function TrustStat({ icon, value, label }) {
-  return (
-    <div className="flex flex-col items-center text-center space-y-2">
-      <div className="text-primary mb-1">{icon}</div>
-      <div className="text-2xl md:text-3xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-        {value}
-      </div>
-      <div className="text-xs text-muted-foreground font-medium">{label}</div>
-    </div>
-  );
-}
-
-function FloatingCard({
-  className,
-  delay,
-  icon,
-  label,
-  value,
-}) {
-  return (
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.5, delay }}
-      whileHover={{ scale: 1.05, y: -5 }}
-      className={`${className} glass-premium p-4 rounded-2xl shadow-xl backdrop-blur-md animate-float`}
-    >
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
-          {icon}
-        </div>
-        <div>
-          <div className="text-xs text-muted-foreground font-medium">{label}</div>
-          <div className="text-sm font-bold">{value}</div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-  gradient,
-  delay,
-}) {
-  return (
-    <motion.div
-      initial={{ y: 50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, delay }}
-      whileHover={{ y: -8, scale: 1.02 }}
-      className="glass-premium p-8 rounded-3xl hover:glass-strong transition-all duration-300 group cursor-pointer shadow-xl"
-    >
-      <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-        <div className="text-primary group-hover:text-accent transition-colors">{icon}</div>
-      </div>
-      <h3 className="text-2xl font-bold mb-3">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
-      <div className="mt-6 flex items-center text-primary font-semibold group-hover:translate-x-2 transition-transform">
-        Learn more <ChevronRight className="ml-1 w-4 h-4" />
-      </div>
-    </motion.div>
-  );
-}
-
-// ========== Assessment Section ==========
-function AssessmentSection({
-  form,
-  updateForm,
-  calculateBMI,
-  getBloodPressureCategory,
-  submit,
-  resetForm,
-  loading,
-  result,
-  onBack,
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen p-4 md:p-8 relative z-10"
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ y: -30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="glass-premium rounded-3xl p-6 md:p-8 mb-6 shadow-2xl"
-        >
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className="glass-card hover:glass-strong rounded-xl"
-              >
-                ← Back
-              </Button>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Health Assessment
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                  Provide your health metrics for AI-powered analysis
-                </p>
+              <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                <span className="text-slate-400">AHA Blood Pressure Status:</span>
+                <span className={cn("px-2 py-0.5 rounded font-mono text-xs border", bpStatus.color)}>
+                  {bpStatus.label} ({form.ap_hi}/{form.ap_lo} mmHg)
+                </span>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetForm}
-              className="glass-card hover:glass-strong rounded-xl border-2"
-            >
-              Reset Form
-            </Button>
-          </div>
-        </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Form Section */}
-          <motion.div
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-2 space-y-6"
-          >
-            {/* Personal Info */}
-            <FormSection title="Personal Information" icon={<Heart className="w-6 h-6" />}>
-              <div className="grid md:grid-cols-2 gap-6">
-                <SliderInput
-                  label="Age"
-                  min={18}
-                  max={100}
-                  value={form.age}
-                  onChange={(v) => updateForm("age", v)}
-                  unit="years"
-                />
-                <SelectInput
-                  label="Gender"
-                  value={form.gender}
-                  onChange={(v) => updateForm("gender", v)}
-                  options={[
-                    { label: "Female", value: 0 },
-                    { label: "Male", value: 1 },
-                  ]}
-                />
+            {/* 3. Biomarkers & Lifestyle Card */}
+            <div className="minimal-card rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-blue-400 text-xs font-mono">
+                    3
+                  </span>
+                  Lab Biomarkers & Habits
+                </h2>
               </div>
-            </FormSection>
 
-            {/* Body Measurements */}
-            <FormSection title="Body Measurements" icon={<Activity className="w-6 h-6" />}>
-              <div className="grid md:grid-cols-2 gap-6">
-                <SliderInput
-                  label="Height"
-                  min={140}
-                  max={210}
-                  value={form.height}
-                  onChange={(v) => updateForm("height", v)}
-                  unit="cm"
-                />
-                <SliderInput
-                  label="Weight"
-                  min={40}
-                  max={150}
-                  value={form.weight}
-                  onChange={(v) => updateForm("weight", v)}
-                  unit="kg"
-                />
+              {/* Cholesterol & Glucose Segmented Pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <span className="text-xs text-slate-400">Cholesterol Level</span>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      { val: 1, label: "Normal" },
+                      { val: 2, label: "Above" },
+                      { val: 3, label: "High" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => updateForm("cholesterol", opt.val)}
+                        className={cn(
+                          "py-1.5 px-2 rounded-lg text-xs transition-all border",
+                          form.cholesterol === opt.val
+                            ? "bg-blue-600/20 border-blue-500/50 text-blue-300 font-semibold"
+                            : "bg-slate-800/30 border-slate-800 text-slate-400 hover:text-slate-200"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="input-panel rounded-xl p-3.5 space-y-2">
+                  <span className="text-xs text-slate-400">Glucose Level</span>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      { val: 1, label: "Normal" },
+                      { val: 2, label: "Above" },
+                      { val: 3, label: "High" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => updateForm("gluc", opt.val)}
+                        className={cn(
+                          "py-1.5 px-2 rounded-lg text-xs transition-all border",
+                          form.gluc === opt.val
+                            ? "bg-blue-600/20 border-blue-500/50 text-blue-300 font-semibold"
+                            : "bg-slate-800/30 border-slate-800 text-slate-400 hover:text-slate-200"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <InfoBox label="Body Mass Index (BMI)" value={`${calculateBMI()} kg/m²`} />
-            </FormSection>
 
-            {/* Blood Pressure */}
-            <FormSection title="Blood Pressure" icon={<TrendingDown className="w-6 h-6" />}>
-              <div className="grid md:grid-cols-2 gap-6">
-                <SliderInput
-                  label="Systolic (Upper)"
-                  min={90}
-                  max={200}
-                  value={form.ap_hi}
-                  onChange={(v) => updateForm("ap_hi", v)}
-                  unit="mmHg"
-                />
-                <SliderInput
-                  label="Diastolic (Lower)"
-                  min={60}
-                  max={130}
-                  value={form.ap_lo}
-                  onChange={(v) => updateForm("ap_lo", v)}
-                  unit="mmHg"
-                />
-              </div>
-              <InfoBox label="BP Category" value={getBloodPressureCategory()} />
-            </FormSection>
-
-            {/* Health Indicators */}
-            <FormSection title="Health Indicators" icon={<Shield className="w-6 h-6" />}>
-              <div className="grid md:grid-cols-2 gap-6">
-                <SelectInput
-                  label="Cholesterol Level"
-                  value={form.cholesterol}
-                  onChange={(v) => updateForm("cholesterol", v)}
-                  options={[
-                    { label: "Normal", value: 1 },
-                    { label: "Above Normal", value: 2 },
-                    { label: "Well Above Normal", value: 3 },
-                  ]}
-                />
-                <SelectInput
-                  label="Glucose Level"
-                  value={form.gluc}
-                  onChange={(v) => updateForm("gluc", v)}
-                  options={[
-                    { label: "Normal", value: 1 },
-                    { label: "Above Normal", value: 2 },
-                    { label: "Well Above Normal", value: 3 },
-                  ]}
-                />
-              </div>
-            </FormSection>
-
-            {/* Lifestyle */}
-            <FormSection title="Lifestyle Factors" icon={<Sparkles className="w-6 h-6" />}>
-              <div className="space-y-4">
-                <ToggleInput
+              {/* Lifestyle Toggles */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <MinimalToggle
                   label="Smoker"
-                  description="Currently smoking tobacco"
-                  value={form.smoke}
-                  onChange={(v) => updateForm("smoke", v)}
+                  checked={form.smoke === 1}
+                  onChange={(c) => updateForm("smoke", c ? 1 : 0)}
                 />
-                <ToggleInput
-                  label="Alcohol Consumption"
-                  description="Regular alcohol intake"
-                  value={form.alco}
-                  onChange={(v) => updateForm("alco", v)}
+                <MinimalToggle
+                  label="Alcohol"
+                  checked={form.alco === 1}
+                  onChange={(c) => updateForm("alco", c ? 1 : 0)}
                 />
-                <ToggleInput
-                  label="Physically Active"
-                  description="Regular physical activity"
-                  value={form.active}
-                  onChange={(v) => updateForm("active", v)}
+                <MinimalToggle
+                  label="Active Exercise"
+                  checked={form.active === 1}
+                  onChange={(c) => updateForm("active", c ? 1 : 0)}
                 />
               </div>
-            </FormSection>
+            </div>
+          </div>
 
-            {/* Submit Button */}
-            <Button
-              size="lg"
-              onClick={submit}
+          {/* Right Column: Prediction Engine & Results (5 cols) */}
+          <div className="lg:col-span-5 space-y-5">
+            {/* Primary Action Button */}
+            <button
+              onClick={handlePredict}
               disabled={loading}
-              className="w-full glass-premium text-xl py-8 rounded-2xl hover:scale-[1.02] transition-all duration-300 shadow-2xl text-white bg-gradient-to-r from-primary via-accent to-secondary border-0"
+              className={cn(
+                "w-full py-3.5 px-4 rounded-xl font-medium text-sm transition-all duration-200 shadow-lg flex items-center justify-center gap-2",
+                loading
+                  ? "bg-blue-600/50 text-blue-200 cursor-wait"
+                  : "bg-blue-600 hover:bg-blue-500 text-white active:scale-[0.99] border border-blue-400/30"
+              )}
             >
               {loading ? (
                 <>
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-6 h-6 border-3 border-white border-t-transparent rounded-full mr-3"
+                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
                   />
-                  Analyzing Your Health Data...
+                  <span>Evaluating Risk Model...</span>
                 </>
               ) : (
                 <>
-                  <Zap className="mr-3 w-6 h-6" />
-                  Predict Cardiovascular Risk
-                  <ArrowRight className="ml-3 w-6 h-6" />
+                  <Activity className="w-4 h-4" />
+                  <span>Analyze Cardiovascular Risk</span>
+                  <ChevronRight className="w-4 h-4 opacity-70" />
                 </>
               )}
-            </Button>
-          </motion.div>
+            </button>
 
-          {/* Results Section */}
-          <motion.div
-            initial={{ x: 30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-1"
-          >
-            <div className="glass-premium rounded-3xl p-6 md:p-8 sticky top-8 shadow-2xl">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
-                  <Activity className="w-6 h-6 text-primary" />
-                </div>
-                Assessment Results
-              </h2>
+            {/* Assessment Output Card */}
+            <div className="minimal-card rounded-2xl p-5 space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <Stethoscope className="w-4 h-4 text-blue-400" />
+                  Risk Assessment
+                </h3>
+                {result && (
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Confidence: High
+                  </span>
+                )}
+              </div>
 
               {!result ? (
-                <div className="text-center py-16">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="w-24 h-24 rounded-full glass-card flex items-center justify-center mx-auto mb-6 shadow-lg"
-                  >
-                    <Heart className="w-12 h-12 text-primary" />
-                  </motion.div>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Complete the assessment form and submit to receive your personalized cardiovascular
-                    risk analysis powered by AI
-                  </p>
+                <div className="py-12 px-4 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-800/50 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-400">
+                    <Heart className="w-6 h-6 stroke-[1.5]" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-slate-300">
+                      Ready for Evaluation
+                    </p>
+                    <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                      Click the button above to execute the XGBoost model across the current clinical metrics.
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <ResultsDisplay result={result} />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-5"
+                  >
+                    {/* Score Box */}
+                    <div
+                      className={cn(
+                        "p-4 rounded-xl border flex items-center justify-between",
+                        result.risk === 1
+                          ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                          : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center",
+                            result.risk === 1 ? "bg-rose-500/20" : "bg-emerald-500/20"
+                          )}
+                        >
+                          {result.risk === 1 ? (
+                            <AlertTriangle className="w-5 h-5 text-rose-400" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm">
+                            {result.risk === 1
+                              ? "Elevated Risk Detected"
+                              : "Low Risk Profile"}
+                          </h4>
+                          <p className="text-xs opacity-80">
+                            {result.risk === 1
+                              ? "Clinical evaluation recommended"
+                              : "Standard preventive maintenance"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-2xl font-bold font-mono">
+                          {result.risk_percentage}%
+                        </span>
+                        <p className="text-[10px] opacity-70 font-mono">PROBABILITY</p>
+                      </div>
+                    </div>
+
+                    {/* Risk Bar Meter */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                        <span>Risk Spectrum</span>
+                        <span>{result.risk_percentage}% / 100%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${result.risk_percentage}%` }}
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+                          className={cn(
+                            "h-full rounded-full",
+                            result.risk === 1
+                              ? "bg-gradient-to-r from-amber-500 to-rose-500"
+                              : "bg-gradient-to-r from-teal-500 to-emerald-400"
+                          )}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                        <span>0% (Low)</span>
+                        <span>50% (Threshold)</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+
+                    {/* Contributing Risk Indicators */}
+                    <div className="space-y-2">
+                      <span className="text-xs text-slate-400 font-medium">
+                        Identified Clinical Factors:
+                      </span>
+                      {activeRiskFactors.length === 0 ? (
+                        <p className="text-xs text-emerald-400/90 flex items-center gap-1.5 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          No major adverse risk factors detected.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeRiskFactors.map((f, i) => (
+                            <span
+                              key={i}
+                              className="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 font-medium"
+                            >
+                              • {f}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actionable Recommendations */}
+                    <div className="space-y-2 pt-1 border-t border-slate-800/60">
+                      <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                        Next Steps & Recommendations:
+                      </span>
+                      <ul className="text-xs text-slate-300 space-y-1.5 pl-1">
+                        {result.risk === 1 ? (
+                          <>
+                            <li className="flex items-start gap-1.5">
+                              <span className="text-rose-400 font-bold">•</span>
+                              Schedule a routine cardiovascular consultation with a physician.
+                            </li>
+                            <li className="flex items-start gap-1.5">
+                              <span className="text-rose-400 font-bold">•</span>
+                              Monitor systolic/diastolic blood pressure weekly.
+                            </li>
+                            <li className="flex items-start gap-1.5">
+                              <span className="text-rose-400 font-bold">•</span>
+                              Adopt a low-sodium Mediterranean dietary plan.
+                            </li>
+                          </>
+                        ) : (
+                          <>
+                            <li className="flex items-start gap-1.5">
+                              <span className="text-emerald-400 font-bold">•</span>
+                              Maintain 150+ minutes of moderate aerobic activity weekly.
+                            </li>
+                            <li className="flex items-start gap-1.5">
+                              <span className="text-emerald-400 font-bold">•</span>
+                              Keep annual wellness checks and biomarker screenings.
+                            </li>
+                          </>
+                        )}
+                      </ul>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               )}
 
               {/* Disclaimer */}
-              <div className="mt-8 pt-6 border-t border-border/50">
-                <div className="flex items-start gap-3 text-xs text-muted-foreground glass p-4 rounded-xl">
-                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-accent" />
-                  <p className="leading-relaxed">
-                    <strong className="font-semibold text-foreground">Medical Disclaimer:</strong>{" "}
-                    This assessment tool is designed for educational purposes only and should not
-                    replace professional medical advice, diagnosis, or treatment.
-                  </p>
-                </div>
+              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 text-[11px] text-slate-400 flex items-start gap-2">
+                <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                <p className="leading-normal">
+                  <strong className="text-slate-300">Disclaimer:</strong> For educational & screening assistance. Not a substitute for professional clinical diagnosis.
+                </p>
               </div>
             </div>
-          </motion.div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function FormSection({
-  title,
-  icon,
-  children,
-}) {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.01 }}
-      className="glass-card rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-all"
-    >
-      <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
-          <div className="text-primary">{icon}</div>
-        </div>
-        {title}
-      </h3>
-      <div className="space-y-6">{children}</div>
-    </motion.div>
-  );
-}
-
-function SliderInput({
-  label,
-  min,
-  max,
-  value,
-  onChange,
-  unit,
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold text-foreground">{label}</Label>
-        <span className="text-base font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          {value} {unit}
-        </span>
-      </div>
-      <Slider
-        min={min}
-        max={max}
-        step={1}
-        value={[value]}
-        onValueChange={(vals) => onChange(vals[0])}
-        className="cursor-pointer"
-      />
-      <div className="flex justify-between text-xs text-muted-foreground font-medium">
-        <span>{min}</span>
-        <span>{max}</span>
-      </div>
-    </div>
-  );
-}
-
-function SelectInput({
-  label,
-  value,
-  onChange,
-  options,
-}) {
-  return (
-    <div className="space-y-3">
-      <Label className="text-sm font-semibold text-foreground">{label}</Label>
-      <Select value={value.toString()} onValueChange={(v) => onChange(Number(v))}>
-        <SelectTrigger className="glass-card border-border/50 h-12 rounded-xl">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="glass-strong rounded-xl">
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value.toString()} className="rounded-lg">
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-function ToggleInput({ label, description, value, onChange }) {
-  return (
-    <div 
-      className="flex items-center justify-between p-4 glass rounded-xl border border-white/10 hover:border-primary/30 transition-all cursor-pointer group"
-      onClick={() => onChange(value === 1 ? 0 : 1)}
-    >
-      <div className="space-y-1">
-        <Label className="text-base font-semibold cursor-pointer text-white group-hover:text-primary transition-colors">
-          {label}
-        </Label>
-        <p className="text-xs text-slate-400">{description}</p>
-      </div>
-      
-      <div className="flex items-center gap-3">
-        {/* Status Text Indicator */}
-        <span className={`text-sm font-bold px-2 py-1 rounded-md transition-colors ${
-          value === 1 
-            ? "text-blue-400 bg-blue-400/10" 
-            : "text-slate-500"
-        }`}>
-          {value === 1 ? "Yes" : "No"}
-        </span>
-
-        {/* The Switch Component */}
-        <Switch
-          checked={value === 1}
-          onCheckedChange={(checked) => onChange(checked ? 1 : 0)}
-        />
-      </div>
-    </div>
-  );
-}
-function InfoBox({ label, value }) {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      className="glass rounded-xl p-5 flex items-center justify-between shadow-md"
-    >
-      <span className="text-sm font-semibold text-muted-foreground">{label}</span>
-      <span className="text-base font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-        {value}
-      </span>
-    </motion.div>
-  );
-}
-
-function ResultsDisplay({ result }) {
-  const isHighRisk = result.risk;
-  const probability = (result.probability * 100).toFixed(1);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      {/* Risk Status */}
-      <motion.div
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200 }}
-        className={`p-6 rounded-2xl shadow-lg ${
-          isHighRisk
-            ? "bg-gradient-to-br from-destructive/20 to-destructive/10 border-2 border-destructive/40"
-            : "bg-gradient-to-br from-green-500/20 to-green-500/10 border-2 border-green-500/40"
-        }`}
-      >
-        <div className="flex items-center gap-4 mb-3">
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg ${
-              isHighRisk ? "bg-destructive/30" : "bg-green-500/30"
-            }`}
-          >
-            {isHighRisk ? (
-              <AlertCircle className="w-8 h-8 text-destructive" />
-            ) : (
-              <Check className="w-8 h-8 text-green-500" />
-            )}
-          </motion.div>
-          <div>
-            <h3 className={`text-2xl font-black ${isHighRisk ? "text-destructive" : "text-green-500"}`}>
-              {isHighRisk ? "High Risk Detected" : "Low Risk Profile"}
-            </h3>
-            <p className="text-sm text-muted-foreground font-medium">
-              {isHighRisk ? "Medical consultation recommended" : "Maintain healthy lifestyle"}
-            </p>
           </div>
         </div>
-      </motion.div>
-
-      {/* Risk Meter */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="font-semibold text-foreground">Risk Probability</span>
-          <span className="text-2xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            {probability}%
-          </span>
-        </div>
-        <div className="h-4 bg-muted/50 rounded-full overflow-hidden shadow-inner">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${probability}%` }}
-            transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
-            className={`h-full rounded-full shadow-lg ${
-              isHighRisk
-                ? "bg-gradient-to-r from-destructive/70 to-destructive"
-                : "bg-gradient-to-r from-green-500/70 to-green-500"
-            }`}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground font-medium">
-          <span>Low Risk</span>
-          <span>Medium</span>
-          <span>High Risk</span>
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      <div className="space-y-4">
-        <h4 className="font-bold text-lg flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-accent" />
-          Personalized Recommendations
-        </h4>
-        <div className="space-y-3">
-          {isHighRisk ? (
-            <>
-              <RecommendationItem text="Schedule immediate consultation with a cardiologist" priority="high" />
-              <RecommendationItem text="Monitor blood pressure twice daily" priority="high" />
-              <RecommendationItem text="Implement lifestyle modifications immediately" priority="medium" />
-              <RecommendationItem text="Complete comprehensive cardiac screening" priority="medium" />
-            </>
-          ) : (
-            <>
-              <RecommendationItem text="Continue current healthy lifestyle habits" priority="low" />
-              <RecommendationItem text="Maintain regular physical activity routine" priority="low" />
-              <RecommendationItem text="Schedule annual preventive health check-ups" priority="low" />
-              <RecommendationItem text="Monitor key health indicators quarterly" priority="low" />
-            </>
-          )}
-        </div>
-      </div>
-    </motion.div>
+      </main>
+    </div>
   );
 }
 
-function RecommendationItem({ text, priority }) {
-  const colors = {
-    high: "text-destructive",
-    medium: "text-accent",
-    low: "text-primary",
-  };
-
+// Minimal Slider Component
+function MinimalSlider({ min, max, value, onChange }) {
   return (
-    <motion.div
-      initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex items-start gap-3 text-sm glass p-4 rounded-xl hover:glass-strong transition-all"
+    <SliderPrimitive.Root
+      value={[value]}
+      min={min}
+      max={max}
+      step={1}
+      onValueChange={(v) => onChange(v[0])}
+      className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
     >
-      <Check className={`w-5 h-5 ${colors[priority]} mt-0.5 flex-shrink-0`} />
-      <span className="leading-relaxed font-medium">{text}</span>
-    </motion.div>
+      <SliderPrimitive.Track className="bg-slate-800 relative grow rounded-full h-1.5">
+        <SliderPrimitive.Range className="absolute bg-blue-500 rounded-full h-full" />
+      </SliderPrimitive.Track>
+      <SliderPrimitive.Thumb className="block w-4 h-4 bg-white rounded-full border-2 border-blue-500 shadow transition-transform focus:outline-none focus:scale-110 active:scale-125" />
+    </SliderPrimitive.Root>
+  );
+}
+
+// Minimal Toggle Switch Component
+function MinimalToggle({ label, checked, onChange }) {
+  return (
+    <div
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all",
+        checked
+          ? "bg-blue-600/10 border-blue-500/40 text-blue-200"
+          : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+      )}
+    >
+      <span className="text-xs font-medium">{label}</span>
+      <SwitchPrimitive.Root
+        checked={checked}
+        onCheckedChange={onChange}
+        className={cn(
+          "w-8 h-4 rounded-full transition-colors relative focus:outline-none",
+          checked ? "bg-blue-600" : "bg-slate-800"
+        )}
+      >
+        <SwitchPrimitive.Thumb
+          className={cn(
+            "block w-3 h-3 bg-white rounded-full transition-transform",
+            checked ? "translate-x-4" : "translate-x-0.5"
+          )}
+        />
+      </SwitchPrimitive.Root>
+    </div>
   );
 }
