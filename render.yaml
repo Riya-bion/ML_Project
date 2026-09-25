@@ -4,7 +4,7 @@ services:
     name: cardio-risk-api
     runtime: python
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: npm --prefix ../cardio-frontend install && npm --prefix ../cardio-frontend run build && pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     plan: free
     healthCheckPath: /health
